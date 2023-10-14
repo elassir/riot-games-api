@@ -1,0 +1,61 @@
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 15px;
+        text-align: left;
+    }
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+</style>
+
+<table>
+  <thead>
+    <tr>
+      <th>Summoner Name</th>
+      <th>Total Wins</th>
+      <th>Total Matches</th>
+      <th>Avg Pink Wards</th>
+      <th>Avg Pings</th>
+      <th>Top Champions</th>
+      <th>Most Frequent Bans</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in data_list %}
+    <tr>
+      <td>{{ row[0] }}</td>
+      <td>{{ row[1] }}</td>
+      <td>{{ row[2] }}</td>
+      <td>{{ row[3]|round(2) }}</td>
+      <td>{{ row[4]|round(2) }}</td>
+      <td>
+        <ul>
+          {% for champ in row[5] %}
+          <li>
+            <img src="{{ champ.icon_url }}" alt="{{ champ.name }}" width="40" height="40">
+            {{ champ.name }}  {{ champ.winrate|round(2) }}% winrate over {{ champ.games }} games
+          </li>
+          {% endfor %}
+        </ul>
+      </td>
+      <td>
+        <ul>
+            {% for ban in row[6] %}
+            <li>
+                <img src="{{ ban.icon_url }}" alt="{{ ban.name }}" width="40" height="40">
+                {{ ban.name }}
+            </li>
+            {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
