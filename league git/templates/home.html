@@ -1,61 +1,406 @@
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 15px;
-        text-align: left;
-    }
-    th {
-        background-color: #4CAF50;
-        color: white;
-    }
-</style>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League of Legends - Team Stats</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<table>
-  <thead>
-    <tr>
-      <th>Summoner Name</th>
-      <th>Total Wins</th>
-      <th>Total Matches</th>
-      <th>Avg Pink Wards</th>
-      <th>Avg Pings</th>
-      <th>Top Champions</th>
-      <th>Most Frequent Bans</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in data_list %}
-    <tr>
-      <td>{{ row[0] }}</td>
-      <td>{{ row[1] }}</td>
-      <td>{{ row[2] }}</td>
-      <td>{{ row[3]|round(2) }}</td>
-      <td>{{ row[4]|round(2) }}</td>
-      <td>
-        <ul>
-          {% for champ in row[5] %}
-          <li>
-            <img src="{{ champ.icon_url }}" alt="{{ champ.name }}" width="40" height="40">
-            {{ champ.name }}  {{ champ.winrate|round(2) }}% winrate over {{ champ.games }} games
-          </li>
-          {% endfor %}
-        </ul>
-      </td>
-      <td>
-        <ul>
-            {% for ban in row[6] %}
-            <li>
-                <img src="{{ ban.icon_url }}" alt="{{ ban.name }}" width="40" height="40">
-                {{ ban.name }}
-            </li>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a1428 0%, #1a2332 50%, #0d1b2a 100%);
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c89b3c 0%, #f0e6d2 50%, #c89b3c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(200, 155, 60, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #a09b8c;
+            font-weight: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, rgba(26, 35, 50, 0.9) 0%, rgba(13, 27, 42, 0.95) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(200, 155, 60, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInUp 0.6s ease backwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(200, 155, 60, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .player-card:hover::before {
+            opacity: 1;
+        }
+
+        .player-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(200, 155, 60, 0.3);
+            border-color: rgba(200, 155, 60, 0.5);
+        }
+
+        .player-card:nth-child(1) { animation-delay: 0.1s; }
+        .player-card:nth-child(2) { animation-delay: 0.2s; }
+        .player-card:nth-child(3) { animation-delay: 0.3s; }
+        .player-card:nth-child(4) { animation-delay: 0.4s; }
+        .player-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid rgba(200, 155, 60, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .player-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #c89b3c;
+            text-shadow: 0 2px 10px rgba(200, 155, 60, 0.4);
+        }
+
+        .win-rate {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #5cb85c;
+            text-shadow: 0 0 20px rgba(92, 184, 92, 0.5);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: rgba(10, 20, 40, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(200, 155, 60, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            background: rgba(20, 30, 50, 0.8);
+            border-color: rgba(200, 155, 60, 0.3);
+            transform: scale(1.05);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #a09b8c;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f0e6d2;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #c89b3c;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #c89b3c 0%, #785a28 100%);
+            border-radius: 2px;
+        }
+
+        .champions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .champion-item {
+            background: rgba(10, 20, 40, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(200, 155, 60, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .champion-item:hover {
+            background: rgba(20, 30, 50, 0.8);
+            border-color: rgba(200, 155, 60, 0.3);
+            transform: translateX(5px);
+        }
+
+        .champion-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            border: 2px solid #c89b3c;
+            box-shadow: 0 4px 15px rgba(200, 155, 60, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .champion-item:hover .champion-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(200, 155, 60, 0.5);
+        }
+
+        .champion-info {
+            flex: 1;
+        }
+
+        .champion-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #f0e6d2;
+            margin-bottom: 3px;
+        }
+
+        .champion-stats {
+            font-size: 0.8rem;
+            color: #a09b8c;
+        }
+
+        .winrate-badge {
+            background: linear-gradient(135deg, #5cb85c 0%, #449d44 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(92, 184, 92, 0.3);
+        }
+
+        .bans-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .ban-item {
+            background: rgba(220, 53, 69, 0.1);
+            border: 2px solid rgba(220, 53, 69, 0.3);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .ban-item:hover {
+            background: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .ban-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            border: 2px solid #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            filter: grayscale(0.3);
+        }
+
+        .ban-name {
+            font-size: 0.8rem;
+            color: #dc3545;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .champions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.2rem;
+            color: #a09b8c;
+            background: rgba(26, 35, 50, 0.6);
+            border-radius: 20px;
+            border: 1px solid rgba(200, 155, 60, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ League Stats Dashboard</h1>
+            <p>Statistiques détaillées des invocateurs</p>
+        </div>
+
+        {% if data_list %}
+        <div class="stats-grid">
+            {% for row in data_list %}
+            <div class="player-card">
+                <div class="player-header">
+                    <div class="player-name">{{ row[0] }}</div>
+                    <div class="win-rate">{{ ((row[1] / row[2]) * 100)|round(1) }}%</div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-label">Victoires</div>
+                        <div class="stat-value" style="color: #5cb85c;">{{ row[1] }}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Parties</div>
+                        <div class="stat-value">{{ row[2] }}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Pink Wards</div>
+                        <div class="stat-value" style="color: #e74c3c;">{{ row[3]|round(1) }}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Pings Moy.</div>
+                        <div class="stat-value" style="color: #3498db;">{{ row[4]|round(0) }}</div>
+                    </div>
+                </div>
+
+                {% if row[5] %}
+                <div class="section-title">Top Champions</div>
+                <div class="champions-grid">
+                    {% for champ in row[5] %}
+                    <div class="champion-item">
+                        <img src="{{ champ.icon_url }}" alt="{{ champ.name }}" class="champion-icon">
+                        <div class="champion-info">
+                            <div class="champion-name">{{ champ.name }}</div>
+                            <div class="champion-stats">{{ champ.games }} parties</div>
+                        </div>
+                        <div class="winrate-badge">{{ champ.winrate|round(0) }}%</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if row[6] %}
+                <div class="section-title">Bans Fréquents</div>
+                <div class="bans-container">
+                    {% for ban in row[6] %}
+                    <div class="ban-item">
+                        <img src="{{ ban.icon_url }}" alt="{{ ban.name }}" class="ban-icon">
+                        <div class="ban-name">{{ ban.name }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
             {% endfor %}
-        </ul>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>Aucune donnée disponible pour le moment.</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Vérifiez que l'API est accessible et que les noms d'invocateurs sont corrects.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -47,17 +47,17 @@ def get_average_pings(match_data, summoner_name):
 
 @app.route("/")
 def home():
-    api_key = 'RGAPI-efbfd626-60ea-456a-ad91-cb71f09cd50f'
-    summoner_names = ['sampiklesyeux', 'Barkeagles', 'MisterJLB', 'Montépixou'] #remmetre sandrine
+    api_key = 'RGAPI-3d6c1cb4-3c9c-40a6-ba24-e13475cb2098'
+    summoner_names = ['sampiklesyeux', 'Barkeagles', 'MisterJLB' ]  # 'Montépixou', 'Alfortville'
     region = 'euw1'
 
     # Fetch the champion data
-    champion_response = requests.get('http://ddragon.leagueoflegends.com/cdn/13.12.1/data/en_US/champion.json')
+    champion_response = requests.get('https://ddragon.leagueoflegends.com/cdn/14.23.1/data/en_US/champion.json')
     champion_data = champion_response.json()
 
     champion_dict = {}
     for champ, data in champion_data['data'].items():
-        champion_dict[int(data['key'])] = {'name': champ, 'icon_url': f"http://ddragon.leagueoflegends.com/cdn/13.12.1/img/champion/{data['image']['full']}"}
+        champion_dict[int(data['key'])] = {'name': champ, 'icon_url': f"http://ddragon.leagueoflegends.com/cdn/14.23.1/img/champion/{data['image']['full']}"}
 
     data_list = []
     for summoner_name in summoner_names:
@@ -65,7 +65,7 @@ def home():
         data = response.json()
 
         
-        #time.sleep(121)
+        
             
         if 'accountId' in data:
             account_id = data['puuid']
